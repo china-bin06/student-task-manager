@@ -1,0 +1,13 @@
+.venv/
+.git/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+*.db
+*.db-*
+tests/
+check_*.py
+backfill_*.py
+*.docx
