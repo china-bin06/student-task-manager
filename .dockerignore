@@ -11,3 +11,16 @@ tests/
 check_*.py
 backfill_*.py
 *.docx
+frontend/
+docs/
+deploy/
+backups/
+*.dump
+*.sql
+*.sql.gz
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519

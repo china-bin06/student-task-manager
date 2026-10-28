@@ -39,3 +39,15 @@ frontend/.legacy-backup/
 
 # Word 临时文件
 ~$*
+
+# 线上数据库备份与证书私钥
+backups/
+*.dump
+*.sql
+*.sql.gz
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519

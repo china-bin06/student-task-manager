@@ -2,6 +2,7 @@ name: student-task-manager
 
 services:
   api:
+    restart: unless-stopped
     build:
       context: .
     image: student-task-api:dev
@@ -14,6 +15,7 @@ services:
         condition: service_healthy
         
   postgres:
+    restart: unless-stopped
     image: postgres:18
     env_file:
       - .env.postgres

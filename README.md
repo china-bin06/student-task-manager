@@ -1,10 +1,16 @@
 # 学生任务管理系统
 
+当前版本：**v3.0.0 · 部署上线版**。提供腾讯云 Ubuntu + Docker Compose + Nginx 部署流程、同源接口代理模板、日常启动和更新说明；版本名称表示交付范围，线上可用性仍需在服务器验证。
+
 当前版本：**v2.0.0 · 本地完整版**。版本变化见 [更新记录](CHANGELOG.md)。
 
 基于 FastAPI、SQLAlchemy 和 JWT 的学习项目，提供用户注册登录、个人任务管理与操作历史查询。支持 SQLite 本地开发、PostgreSQL 和 Docker Compose 运行。
 
 仓库包含 FastAPI 后端与 React 前端。接口仍可通过 Swagger UI 独立调用。
+
+腾讯云上线流程、日常启动停止、更新与排错见 [腾讯云部署与启动说明](docs/腾讯云部署与启动说明.md)。
+
+发布记录见 [CHANGELOG](CHANGELOG.md)，本次上传前的配置检查见 [v3.0.0 发布检查](docs/v3.0.0发布检查.md)。Nginx 模板位于 [deploy/nginx.conf](deploy/nginx.conf)，前端线上配置模板位于 [frontend/.env.production.example](frontend/.env.production.example)。
 
 ## 启动操作说明
 
