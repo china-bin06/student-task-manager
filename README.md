@@ -1,8 +1,127 @@
-# 学生任务管理系统 · 后端版
+# 学生任务管理系统
+
+当前版本：**v2.0.0 · 本地完整版**。版本变化见 [更新记录](CHANGELOG.md)。
 
 基于 FastAPI、SQLAlchemy 和 JWT 的学习项目，提供用户注册登录、个人任务管理与操作历史查询。支持 SQLite 本地开发、PostgreSQL 和 Docker Compose 运行。
 
-本仓库发布后端。接口可通过 Swagger UI 调用，不依赖前端页面。
+仓库包含 FastAPI 后端与 React 前端。接口仍可通过 Swagger UI 独立调用。
+
+## 启动操作说明
+
+以下命令使用 PowerShell，**均在项目根目录执行**。前端和后端分别启动；后端从下面两种方式中选择一种。
+
+| 方式 | 运行组合 | 适用场景 |
+| --- | --- | --- |
+| A：本机 SQLite | 本机 Python 后端 + SQLite + 本机前端 | 快速开发，无需 Docker |
+| B：Docker PostgreSQL | 容器后端 + 容器 PostgreSQL + 本机前端 | 使用项目现有 Compose 环境 |
+
+环境准备：Python 3.12、Node.js 24（已验证 24.22.0 / npm 11.19.1）；方式 B 还需要启动 Docker Desktop，使用 Linux 容器及 Compose v2。已有数据库继续使用对应方式及配置；两种方式的数据不会自动互通。
+
+### 1. 首次准备
+
+两种方式都需要先安装前端依赖，已有依赖且锁文件未变化时可以跳过：
+
+```powershell
+npm --prefix frontend ci
+```
+
+**方式 A：准备本机后端。** 已有 `.venv` 时跳过创建；已有 `.env` 时保留原文件。
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+编辑根目录 `.env`：将 `DATABASE_URL` 设置为 `sqlite:///./student_tasks.db`，将 `JWT_SECRET_KEY` 设置为下面命令生成的随机值。已有有效密钥可继续使用。
+
+```powershell
+.\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
+```
+
+配置完成后初始化或升级数据库：
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m alembic check
+```
+
+**方式 B：准备容器后端。** 已配置并初始化过的环境可直接进入“日常启动”；有新迁移时仍需执行迁移命令。
+
+```powershell
+if (-not (Test-Path .env.postgres)) { Copy-Item .env.postgres.example .env.postgres }
+if (-not (Test-Path .env.api)) { Copy-Item .env.api.example .env.api }
+```
+
+首次配置时分别生成数据库密码和 JWT 密钥：
+
+```powershell
+python -c "import secrets; print(secrets.token_hex(24))"
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+将数据库密码填入 `.env.postgres` 的 `POSTGRES_PASSWORD`，同时替换 `.env.api` 中 `DATABASE_URL` 的密码；将 JWT 密钥填入 `.env.api` 的 `JWT_SECRET_KEY`。保留模板中的容器连接地址 `postgres:5432`，两份文件的账号、密码和数据库名应一致。已有数据库请沿用当前凭证，单独修改配置文件不会改变库内密码。
+
+```powershell
+docker compose config --quiet
+docker compose build api
+docker compose up -d postgres
+docker compose ps
+```
+
+等待 `postgres` 显示 `healthy` 后执行迁移：
+
+```powershell
+docker compose run --rm api python -m alembic upgrade head
+docker compose run --rm api python -m alembic check
+```
+
+### 2. 日常启动：打开两个终端
+
+**终端 1：启动后端。** 根据所选方式执行对应命令，不要同时启动两套后端占用 8000 端口。
+
+方式 A：
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+方式 B：先启动 Docker Desktop，再执行：
+
+```powershell
+docker compose up -d postgres api
+docker compose ps
+```
+
+修改后端代码后，方式 B 使用 `docker compose up -d --build api` 重建；有数据库迁移时先执行上面的 `alembic upgrade head`。
+
+**终端 2：启动前端。** 两种方式使用同一条命令，保持终端运行：
+
+```powershell
+npm --prefix frontend run dev
+```
+
+### 3. 访问与停止
+
+| 入口 | 地址 |
+| --- | --- |
+| 前端页面 | [http://127.0.0.1:5173](http://127.0.0.1:5173) |
+| 后端健康检查 | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
+| 后端接口文档 | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
+
+打开前端后先注册账号，再登录使用。前端默认连接 `http://127.0.0.1:8000`；请使用 `127.0.0.1:5173` 访问，现有后端 CORS 不允许 `localhost:5173` 来源。`/health` 只检查应用响应，数据库连接还需通过注册或查询任务验证。
+
+- 停止前端：在前端终端按 `Ctrl+C`。
+- 停止方式 A 后端：在后端终端按 `Ctrl+C`。
+- 停止方式 B 后端和数据库：在根目录执行 `docker compose stop`，保留数据。不要将会删除数据库卷的 `docker compose down -v` 当作停止命令。
+
+启动故障、环境变量覆盖、数据库连接地址和迁移细节见下方“配置说明”“Docker Compose 启动”“本机开发”；前端构建与部署见 [前端文档](docs/前端文档.md)。
+
+## 前端
+
+浅色“拾序”学习工作台提供注册登录、个人任务管理、标题搜索、完成状态筛选、操作历史与自动同步，沿用现有后端接口。
+
+完整说明见 [前端文档](docs/前端文档.md)，逐项实现及 review 见 [前端实现任务](docs/前端实现任务.md)。
 
 ## 功能
 
@@ -21,15 +140,24 @@
 
 | 用途 | 技术 |
 | --- | --- |
-| 语言与运行环境 | Python 3.12、Uvicorn |
+| 前端语言与运行环境 | TypeScript、Node.js 24、npm |
+| 前端框架 | React、React DOM |
+| 前端路由 | React Router |
+| 服务端数据与缓存 | TanStack Query，管理查询、缓存、写操作与定时同步 |
+| 页面样式与图标 | 原生 CSS、响应式布局、Lucide React |
+| 前端请求 | 浏览器 Fetch API、AbortController |
+| 前端开发与构建 | Vite、@vitejs/plugin-react、TypeScript 类型检查 |
+| 前端测试 | Vitest、Testing Library、jest-dom、jsdom |
+| 前端代码格式化 | Prettier |
+| 后端语言与运行环境 | Python 3.12、Uvicorn |
 | HTTP API、校验与配置 | FastAPI、Pydantic、pydantic-settings |
 | 数据访问与迁移 | SQLAlchemy 同步 Session、Alembic |
 | 数据库 | SQLite、PostgreSQL 18、Psycopg 3 |
 | 认证 | PyJWT、pwdlib / Argon2 |
-| 测试 | pytest、HTTPX、FastAPI TestClient |
+| 后端测试 | pytest、HTTPX、FastAPI TestClient |
 | 容器 | Docker、Docker Compose |
 
-具体依赖版本见 `requirements.txt`，数据库版本见 `compose.yaml`。
+前端依赖声明见 `frontend/package.json`，精确版本见 `frontend/package-lock.json`；后端依赖见 `requirements.txt`，数据库版本见 `compose.yaml`。前端架构和各模块职责见 [前端文档](docs/前端文档.md)。
 
 ## 项目结构
 
@@ -49,6 +177,10 @@ app/
     task_logs.py      历史记录查询
 migrations/           Alembic 迁移历史
 tests/                HTTP 测试与隔离数据库 fixture
+frontend/             React 前端、自动化测试与构建配置
+docs/                 前端设计、实现任务、使用文档与检查截图
+check脚本/            历史学习验证脚本及适用范围说明
+CHANGELOG.md          版本更新记录
 main.py               应用入口、CORS 和路由注册
 alembic.ini
 Dockerfile
@@ -59,7 +191,7 @@ requirements.txt
 .env.postgres.example PostgreSQL 容器配置模板
 ```
 
-根目录的 `check_*.py` 是学习期间的手动验证脚本，不代替 `tests/`。`backfill_task_owner.py` 是针对既有开发数据的一次性脚本，包含固定任务和用户名，不应在新数据库中直接执行；新环境按迁移历史初始化即可。
+`check脚本/` 中的 `check_*.py` 是学习期间的手动验证脚本，不代替 `tests/`，部分脚本沿用旧模型；使用方式与限制见 [脚本说明](check脚本/README.md)。`backfill_task_owner.py` 是针对既有开发数据的一次性脚本，包含固定任务和用户名，不应在新数据库中直接执行；新环境按迁移历史初始化即可。
 
 ## 配置说明
 

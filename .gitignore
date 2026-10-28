@@ -27,8 +27,11 @@ __pycache__/
 htmlcov/
 *.log
 
-# 当前仓库只发布后端
-/frontend/
+# 前端依赖、构建产物与本地备份
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.legacy-backup/
 
 # # 本地临时学习、验证脚本，第一版先保留
 # /check_*.py
