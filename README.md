@@ -2,7 +2,9 @@
 
 当前版本：**v3.0.0 · 部署上线版**。提供腾讯云 Ubuntu + Docker Compose + Nginx 部署流程、同源接口代理模板、日常启动和更新说明；版本名称表示交付范围，线上可用性仍需在服务器验证。
 
-当前版本：**v2.0.0 · 本地完整版**。版本变化见 [更新记录](CHANGELOG.md)。
+本地全栈版：**v2.0.0 · 本地完整版**。版本变化见 [更新记录](CHANGELOG.md)。
+
+后端版：**v1.0.0 · 后端版**
 
 基于 FastAPI、SQLAlchemy 和 JWT 的学习项目，提供用户注册登录、个人任务管理与操作历史查询。支持 SQLite 本地开发、PostgreSQL 和 Docker Compose 运行。
 
